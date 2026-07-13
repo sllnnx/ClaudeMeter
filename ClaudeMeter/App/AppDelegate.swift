@@ -20,7 +20,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     #endif
 
+    /// The test bundle is hosted by the app, so launching it for tests would otherwise
+    /// bootstrap the real menu bar — reading the session key from the Keychain and
+    /// hitting the network.
+    private var isRunningTests: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
+        guard !isRunningTests else { return }
+
         SessionKeyImportPromptCoordinator.install()
 
         guard let appModel else {
