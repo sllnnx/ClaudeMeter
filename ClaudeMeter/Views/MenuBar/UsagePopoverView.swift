@@ -15,6 +15,8 @@ struct UsagePopoverView: View {
     @Environment(\.openSettings) private var openSettings
 
     /// Span the weekly quota is expected to be consumed over, per the pace-days setting
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
     private var weeklyPacingDuration: TimeInterval {
         appModel.settings.weeklyPacingDuration
     }
@@ -32,6 +34,7 @@ struct UsagePopoverView: View {
                 Text("Claude Usage")
                     .font(.title2)
                     .fontWeight(.bold)
+                    .tracking(-0.3)
 
                 Spacer()
 
@@ -171,7 +174,13 @@ struct UsagePopoverView: View {
             .padding()
         }
         .frame(width: 320, height: 510)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background {
+            if reduceTransparency {
+                Color(nsColor: .windowBackgroundColor)
+            } else {
+                Rectangle().fill(.regularMaterial)
+            }
+        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Usage Dashboard")
     }

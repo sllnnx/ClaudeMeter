@@ -9,6 +9,15 @@ import SwiftUI
 
 /// Reusable usage card component
 struct UsageCardView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    /// Critically damped, ~0.4s: the system's default feel for a value settling into
+    /// place. No bounce, because a usage bar overshooting its real value would lie.
+    private var fillAnimation: Animation? {
+        reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 1.0)
+    }
+
     let title: String
     let usageLimit: UsageLimit
     let icon: String
@@ -103,6 +112,8 @@ struct UsageCardView: View {
                 if isPaceFirst, let paceRatio {
                     Text(String(format: "%.1f×", paceRatio))
                         .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .tracking(-0.7)
+                        .contentTransition(.numericText())
                         .foregroundColor(Self.paceVerdict(for: paceRatio).color)
 
                     Spacer()
@@ -121,6 +132,8 @@ struct UsageCardView: View {
                 } else {
                     Text("\(Int(usageLimit.percentage))%")
                         .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .tracking(-0.7)
+                        .contentTransition(.numericText())
                         .foregroundColor(usageLimit.status.color)
 
                     Spacer()
@@ -147,6 +160,8 @@ struct UsageCardView: View {
                     RoundedRectangle(cornerRadius: 4)
                         .fill(barColor)
                         .frame(width: geometry.size.width * min(usageLimit.percentage / 100, 1.0))
+                        .animation(fillAnimation, value: usageLimit.percentage)
+                        .animation(fillAnimation, value: barColor)
 
                     // Expected-by-now tick
                     if let expectedPercent {
@@ -154,6 +169,7 @@ struct UsageCardView: View {
                             .fill(Color.primary.opacity(0.55))
                             .frame(width: 2, height: 14)
                             .offset(x: geometry.size.width * min(expectedPercent / 100, 1.0) - 1)
+                            .animation(fillAnimation, value: expectedPercent)
                     }
                 }
             }
@@ -173,8 +189,15 @@ struct UsageCardView: View {
             .foregroundColor(.secondary)
         }
         .padding(16)
-        .background(Color(nsColor: .controlBackgroundColor))
-        .cornerRadius(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.primary.opacity(reduceTransparency ? 0.25 : 0.08), lineWidth: 1)
+        )
+        .animation(fillAnimation, value: usageLimit.percentage)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title): \(Int(usageLimit.percentage))% used, \(usageLimit.status.accessibilityDescription)")
         .accessibilityValue(resetLabel)
