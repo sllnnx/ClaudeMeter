@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-09-21
+
+First release of the [sllnnx](https://github.com/sllnnx/ClaudeMeter) fork, picking up
+four pull requests left open upstream and adding further work on top.
+
+### Added
+
+- Model-scoped limits read from the API's `limits` array, so Fable, Opus, Sonnet and
+  any model released later each get a usage card with no app update ([#32](https://github.com/eddmann/ClaudeMeter/pull/32))
+- Every reported model is shown by default; Settings hides rather than reveals
+- Pace-based utilization tracking, with a pace-first display mode ([#33](https://github.com/eddmann/ClaudeMeter/pull/33))
+- Exact reset times in usage cards, with a toggle ([#26](https://github.com/eddmann/ClaudeMeter/pull/26))
+- Multi Bar menu bar icon: one horizontal bar per limit, capped at five
+- Vertical Bar menu bar icon: upright bars labelled `5H`, `W` and the model's initial
+- Compact popover: every limit fits in one window, with per-card expansion for the
+  expected-by-now figure, burn ratio and projection
+
+### Changed
+
+- The off-pace flame/snowflake badge now shows in Consumption mode, not only Pace mode
+- Popover follows Apple's design guidance: spring animation from the current value,
+  size-specific tracking, material for the structural layer, and independent handling
+  of reduce-motion, reduce-transparency and increase-contrast
+- Builds with no Apple Developer account: the project signs ad-hoc rather than pinning
+  a development team
+
+### Fixed
+
+- Snapshot tests no longer fail on newer macOS, and no longer read the Keychain ([#31](https://github.com/eddmann/ClaudeMeter/pull/31))
+- Settings icon picker rendered the bar styles as empty boxes
+- Vertical Bar columns are evenly spaced, with labels centred on their bars
+
+### Note
+
+Releases are ad-hoc signed and **not** notarized by Apple. After moving the app to
+Applications, clear the quarantine flag:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/ClaudeMeter.app
+```
+
 ## [1.4.0] - 2026-05-19
 
 ### Added
@@ -150,6 +191,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Smart notifications with configurable alerts at warning and critical thresholds (defaults: 75% and 90%)
 - Auto-refresh with automatic usage updates every 1-10 minutes (customizable)
 
+[1.5.0]: https://github.com/sllnnx/ClaudeMeter/releases/tag/v1.5.0
 [1.4.0]: https://github.com/eddmann/ClaudeMeter/compare/v1.3.2...v1.4.0
 [1.3.2]: https://github.com/eddmann/ClaudeMeter/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/eddmann/ClaudeMeter/compare/v1.3.0...v1.3.1
