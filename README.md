@@ -7,7 +7,7 @@ Keep track of your Claude.ai plan usage at a glance.
 ## Features
 
 - **Real-time usage monitoring** - Track your 5-hour session, 7-day weekly, and model-specific usage limits
-- **Any model, no update needed** - Model-specific limits (Fable, Opus, Sonnet, ...) are read from whatever the API reports, so a newly launched model is listed in Settings without an app update; switch on the ones you want shown in the popover
+- **Any model, no update needed** - Model-specific limits (Fable, Opus, Sonnet, ...) are read from whatever the API reports, so a newly launched model gets a usage card without an app update; switch off any you don't want in Settings
 - **Menu bar integration** - Clean, colour-coded usage indicator that lives in your macOS menu bar
 - **Multiple icon styles** - Choose from 6 icon styles: Battery, Circular, Minimal, Segments, Dual Bar, or Gauge
 - **Pacing indicator** - Flame icon warns when you're using Claude faster than sustainable pace
@@ -57,19 +57,20 @@ Configure your Claude session, refresh interval, icon style, and notification th
 
 ## Installation
 
-### Homebrew (Recommended)
+### Download
+
+1. Download the latest release from [GitHub Releases](https://github.com/sllnnx/ClaudeMeter/releases)
+2. Unzip and move `ClaudeMeter.app` to Applications
+3. Remove the quarantine flag, then open it:
 
 ```bash
-brew install eddmann/tap/claudemeter
+xattr -dr com.apple.quarantine /Applications/ClaudeMeter.app
+open /Applications/ClaudeMeter.app
 ```
 
-### Manual Download
-
-1. Download the latest release from [GitHub Releases](https://github.com/eddmann/ClaudeMeter/releases)
-2. Unzip and move `ClaudeMeter.app` to Applications
-3. Double-click to open
-
-The app is signed and notarized by Apple, so it will open without any security warnings.
+This build is ad-hoc signed rather than signed with an Apple Developer ID, so it
+is not notarized and Gatekeeper blocks it until the quarantine flag is cleared.
+Right-click the app and choose Open if you prefer not to use the terminal.
 
 ## Usage
 
@@ -200,7 +201,7 @@ Then configure Claude Code's `~/.claude/settings.json`:
 
 ```bash
 # Clone the repository
-git clone https://github.com/eddmann/ClaudeMeter.git
+git clone https://github.com/sllnnx/ClaudeMeter.git
 cd ClaudeMeter
 
 # Open in Xcode
@@ -209,7 +210,10 @@ open ClaudeMeter.xcodeproj
 # Build and run (⌘R)
 ```
 
-Requires Xcode 16.0 or later.
+Requires Xcode 16.0 or later. No Apple Developer account is needed: the project signs
+ad-hoc (`CODE_SIGN_IDENTITY = "-"`, no team), which is enough for the binary to run on
+Apple Silicon. Set your own team in Signing & Capabilities if you want a stable signature
+and fewer Keychain prompts across rebuilds.
 
 ## Disclaimer
 

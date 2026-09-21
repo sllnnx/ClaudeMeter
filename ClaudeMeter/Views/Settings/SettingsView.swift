@@ -625,7 +625,7 @@ struct SettingsView: View {
 
             // Copyright
             VStack(spacing: 4) {
-                Text("© 2025 Edd Mann")
+                Text("© 2025 Edd Mann · fork © 2026 sllnnx")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
@@ -635,7 +635,7 @@ struct SettingsView: View {
             }
 
             // Project Link
-            Link(destination: URL(string: "https://github.com/eddmann/ClaudeMeter")!) {
+            Link(destination: URL(string: "https://github.com/sllnnx/ClaudeMeter")!) {
                 HStack {
                     Image(systemName: "link.circle.fill")
                     Text("View Project on GitHub")

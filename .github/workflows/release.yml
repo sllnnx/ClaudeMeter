@@ -54,34 +54,7 @@ jobs:
 
           echo "Updated version to ${{ steps.version.outputs.version }} (build $BUILD_NUMBER)"
 
-      - name: Install Apple certificate
-        env:
-          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-        run: |
-          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
-
-          echo "$APPLE_CERTIFICATE_BASE64" | base64 --decode > $RUNNER_TEMP/certificate.p12
-
-          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-
-          security import $RUNNER_TEMP/certificate.p12 \
-            -P "$APPLE_CERTIFICATE_PASSWORD" \
-            -A -t cert -f pkcs12 \
-            -k $KEYCHAIN_PATH
-
-          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security list-keychain -d user -s $KEYCHAIN_PATH
-
-          rm -f $RUNNER_TEMP/certificate.p12
-          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> $GITHUB_ENV
-
       - name: Build app
-        env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           xcodebuild clean build \
             -project ClaudeMeter.xcodeproj \
@@ -90,66 +63,17 @@ jobs:
             -derivedDataPath ./build \
             -arch x86_64 -arch arm64 \
             CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Developer ID Application" \
-            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO \
-            OTHER_CODE_SIGN_FLAGS="--timestamp --options runtime"
+            CODE_SIGN_IDENTITY="-" \
+            DEVELOPMENT_TEAM="" \
+            CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO
 
-      - name: Verify code signature
+      - name: Verify ad-hoc signature
         run: |
           APP_PATH="build/Build/Products/Release/ClaudeMeter.app"
-          echo "Verifying code signature..."
+          # Ad-hoc signing is required, not optional: unsigned arm64 binaries
+          # will not execute on Apple Silicon at all.
           codesign -vvv --deep --strict "$APP_PATH"
-          echo "Checking signature details..."
           codesign -dvv "$APP_PATH"
-          echo "Checking entitlements..."
-          codesign -d --entitlements - "$APP_PATH"
-
-      - name: Notarize app
-        env:
-          APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
-          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
-          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-        run: |
-          APP_PATH="build/Build/Products/Release/ClaudeMeter.app"
-
-          echo "$APP_STORE_CONNECT_API_KEY_BASE64" | base64 --decode > $RUNNER_TEMP/AuthKey.p8
-
-          /usr/bin/ditto -c -k --keepParent "$APP_PATH" "$RUNNER_TEMP/ClaudeMeter-notarize.zip"
-
-          echo "Submitting for notarization..."
-          SUBMIT_OUTPUT=$(xcrun notarytool submit "$RUNNER_TEMP/ClaudeMeter-notarize.zip" \
-            --key "$RUNNER_TEMP/AuthKey.p8" \
-            --key-id "$APP_STORE_CONNECT_KEY_ID" \
-            --issuer "$APP_STORE_CONNECT_ISSUER_ID" \
-            --wait 2>&1)
-
-          echo "$SUBMIT_OUTPUT"
-
-          # Extract submission ID
-          SUBMISSION_ID=$(echo "$SUBMIT_OUTPUT" | grep "id:" | head -1 | awk '{print $2}')
-
-          # Check if notarization succeeded
-          if echo "$SUBMIT_OUTPUT" | grep -q "status: Accepted"; then
-            echo "Notarization succeeded!"
-          else
-            echo "Notarization failed. Fetching detailed log..."
-            xcrun notarytool log "$SUBMISSION_ID" \
-              --key "$RUNNER_TEMP/AuthKey.p8" \
-              --key-id "$APP_STORE_CONNECT_KEY_ID" \
-              --issuer "$APP_STORE_CONNECT_ISSUER_ID"
-            rm -f $RUNNER_TEMP/AuthKey.p8 $RUNNER_TEMP/ClaudeMeter-notarize.zip
-            exit 1
-          fi
-
-          echo "Stapling notarization ticket..."
-          xcrun stapler staple "$APP_PATH"
-
-          echo "Verifying..."
-          spctl -a -t exec -vv "$APP_PATH"
-          xcrun stapler validate "$APP_PATH"
-
-          rm -f $RUNNER_TEMP/AuthKey.p8 $RUNNER_TEMP/ClaudeMeter-notarize.zip
 
       - name: Create ZIP
         run: |
@@ -163,34 +87,19 @@ jobs:
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: ClaudeMeter v${{ steps.version.outputs.version }}
-          body: ${{ steps.changelog.outputs.content }}
+          body: |
+            ${{ steps.changelog.outputs.content }}
+
+            ---
+
+            This build is ad-hoc signed and **not** notarized by Apple, so Gatekeeper
+            blocks it on first launch. After moving the app to Applications:
+
+            ```bash
+            xattr -dr com.apple.quarantine /Applications/ClaudeMeter.app
+            ```
           files: ClaudeMeter-${{ steps.version.outputs.version }}.zip
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Update Homebrew tap
-        env:
-          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-        run: |
-          SHA=$(shasum -a 256 ClaudeMeter-${{ steps.version.outputs.version }}.zip | cut -d' ' -f1)
-
-          git clone https://x-access-token:${TAP_TOKEN}@github.com/eddmann/homebrew-tap.git
-          cd homebrew-tap
-
-          sed -i '' "s/version \".*\"/version \"${{ steps.version.outputs.version }}\"/" Casks/claudemeter.rb
-          sed -i '' "s/sha256 \".*\"/sha256 \"${SHA}\"/" Casks/claudemeter.rb
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Casks/claudemeter.rb
-          git commit -m "chore(claudemeter): update to ${{ steps.version.outputs.version }}"
-          git push
-
-      - name: Cleanup keychain
-        if: always()
-        run: |
-          if [[ -f "${KEYCHAIN_PATH:-}" ]]; then
-            security delete-keychain $KEYCHAIN_PATH || true
-          fi
