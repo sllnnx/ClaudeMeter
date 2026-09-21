@@ -60,6 +60,29 @@ final class MenuBarIconSnapshotTests: XCTestCase {
         assertSnapshot(of: image, as: strategy, record: isRecording)
     }
 
+    func test_menuBarIcon_showsMultiBarStyleWithScopedModel() {
+        let image = renderIcon(style: .multiBar, bars: [
+            IconBar(name: "Session", percentage: TestConstants.menuBarSnapshotPercentage, role: .session),
+            IconBar(name: "Weekly", percentage: TestConstants.menuBarSnapshotWeeklyPercentage, role: .weekly),
+            IconBar(name: "Fable", percentage: 23, role: .scoped),
+        ])
+
+        assertSnapshot(of: image, as: strategy, record: isRecording)
+    }
+
+    /// Five bars is the cap, and the tightest layout the menu bar has to hold.
+    func test_menuBarIcon_showsMultiBarStyleAtBarCap() {
+        let image = renderIcon(style: .multiBar, bars: [
+            IconBar(name: "Session", percentage: 72, role: .session),
+            IconBar(name: "Weekly", percentage: 45, role: .weekly),
+            IconBar(name: "Fable", percentage: 23, role: .scoped),
+            IconBar(name: "Opus", percentage: 58, role: .scoped),
+            IconBar(name: "Sonnet", percentage: 12, role: .scoped),
+        ])
+
+        assertSnapshot(of: image, as: strategy, record: isRecording)
+    }
+
     func test_menuBarIcon_showsLoadingIndicatorInBatteryStyle() {
         let image = renderIcon(style: .battery, status: .safe, isLoading: true)
 
@@ -88,7 +111,8 @@ final class MenuBarIconSnapshotTests: XCTestCase {
         style: IconStyle,
         status: UsageStatus = .warning,
         isLoading: Bool = false,
-        isStale: Bool = false
+        isStale: Bool = false,
+        bars: [IconBar] = []
     ) -> NSImage {
         MenuBarIconSnapshotRenderer.render(
             percentage: TestConstants.menuBarSnapshotPercentage,
@@ -96,7 +120,8 @@ final class MenuBarIconSnapshotTests: XCTestCase {
             status: status,
             isLoading: isLoading,
             isStale: isStale,
-            iconStyle: style
+            iconStyle: style,
+            bars: bars
         )
     }
 

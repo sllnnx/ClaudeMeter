@@ -105,6 +105,7 @@ final class MenuBarManager {
             _ = appModel.settings.isColoredIcon
             _ = appModel.settings.weeklyPaceDays
             _ = appModel.settings.isPaceFirstDisplay
+            _ = appModel.settings.hiddenScopedModels
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -126,17 +127,21 @@ final class MenuBarManager {
         let isColored = appModel.settings.isColoredIcon
         let settings = appModel.settings
 
-        // Pace-first display: replace the quota text with the most relevant ratio -
-        // the off-pace signal's if there is one, else the worst (highest) of the
-        // window ratios, so an on-pace weekly isn't hidden behind an idle session.
-        // Skip the pace computation entirely when the feature is off.
+        // The off-pace badge (flame/snowflake) belongs in both display modes: knowing
+        // you're burning hot is useful even when the number means quota. Only the
+        // ratio *replacing* the number is pace-first, which showsPaceAsPrimary gates.
+        // paceSignal already suppresses session underuse, so quota-first stays quiet
+        // about an idle 5-hour window.
         var paceSignal: PaceSignal?
         var paceRatio: Double?
-        if settings.isPaceFirstDisplay, let data = appModel.usageData {
+        if let data = appModel.usageData {
             paceSignal = data.paceSignal(weeklyPaceDays: settings.weeklyPaceDays)
             paceRatio = paceSignal?.ratio
                 ?? data.fallbackPaceRatio(weeklyPaceDays: settings.weeklyPaceDays)
         }
+        let showsPaceAsPrimary = settings.isPaceFirstDisplay
+
+        let bars = iconBars(percentage: percentage, weeklyPercentage: weeklyPercentage)
 
         button.toolTip = paceSignal?.tooltip
 
@@ -149,7 +154,9 @@ final class MenuBarManager {
             weeklyPercentage: weeklyPercentage,
             isColored: isColored,
             paceKind: paceSignal?.kind,
-            paceRatio: paceRatio
+            paceRatio: paceRatio,
+            bars: bars,
+            showsPaceAsPrimary: showsPaceAsPrimary
         ) {
             button.image = cachedImage
             return
@@ -164,7 +171,9 @@ final class MenuBarManager {
             weeklyPercentage: weeklyPercentage,
             isColored: isColored,
             paceKind: paceSignal?.kind,
-            paceRatio: paceRatio
+            paceRatio: paceRatio,
+            bars: bars,
+            showsPaceAsPrimary: showsPaceAsPrimary
         )
 
         iconCache.set(
@@ -177,7 +186,9 @@ final class MenuBarManager {
             weeklyPercentage: weeklyPercentage,
             isColored: isColored,
             paceKind: paceSignal?.kind,
-            paceRatio: paceRatio
+            paceRatio: paceRatio,
+            bars: bars,
+            showsPaceAsPrimary: showsPaceAsPrimary
         )
 
         button.image = image
@@ -186,6 +197,15 @@ final class MenuBarManager {
 
     private func clamped(_ value: Double) -> Double {
         max(0, min(value, 100))
+    }
+
+    private func iconBars(percentage: Double, weeklyPercentage: Double) -> [IconBar] {
+        IconBar.bars(
+            session: percentage,
+            weekly: weeklyPercentage,
+            scoped: appModel.usageData?.scopedUsage ?? [],
+            isShown: { appModel.settings.isScopedModelShown($0) }
+        )
     }
 
     // MARK: - Popover Control

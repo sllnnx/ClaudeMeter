@@ -15,6 +15,7 @@ enum IconStyle: String, Codable, CaseIterable, Identifiable, Sendable {
     case segments       // 5 segments like signal bars
     case dualBar        // Two stacked bars: session + weekly
     case gauge          // SF Symbol gauge icon
+    case multiBar       // Session + weekly + a bar per model-scoped limit
 
     var id: String { rawValue }
 
@@ -27,6 +28,7 @@ enum IconStyle: String, Codable, CaseIterable, Identifiable, Sendable {
         case .segments: return "Segments"
         case .dualBar: return "Dual Bar"
         case .gauge: return "Gauge"
+        case .multiBar: return "Multi Bar"
         }
     }
 
@@ -39,6 +41,7 @@ enum IconStyle: String, Codable, CaseIterable, Identifiable, Sendable {
         case .segments: return "Segmented bar indicator"
         case .dualBar: return "Two bars showing session and weekly usage"
         case .gauge: return "Gauge indicator"
+        case .multiBar: return "Stacked bars showing session, weekly, and each model-specific limit"
         }
     }
 }

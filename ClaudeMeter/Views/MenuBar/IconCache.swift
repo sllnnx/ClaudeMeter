@@ -24,7 +24,9 @@ final class IconCache {
         weeklyPercentage: Double,
         isColored: Bool,
         paceKind: PaceKind?,
-        paceRatio: Double?
+        paceRatio: Double?,
+        bars: [IconBar],
+        showsPaceAsPrimary: Bool
     ) -> NSImage? {
         cache.object(forKey: cacheKey(
             percentage: percentage,
@@ -35,7 +37,9 @@ final class IconCache {
             weeklyPercentage: weeklyPercentage,
             isColored: isColored,
             paceKind: paceKind,
-            paceRatio: paceRatio
+            paceRatio: paceRatio,
+            bars: bars,
+            showsPaceAsPrimary: showsPaceAsPrimary
         ))
     }
 
@@ -49,7 +53,9 @@ final class IconCache {
         weeklyPercentage: Double,
         isColored: Bool,
         paceKind: PaceKind?,
-        paceRatio: Double?
+        paceRatio: Double?,
+        bars: [IconBar],
+        showsPaceAsPrimary: Bool
     ) {
         cache.setObject(
             image,
@@ -62,7 +68,9 @@ final class IconCache {
                 weeklyPercentage: weeklyPercentage,
                 isColored: isColored,
                 paceKind: paceKind,
-                paceRatio: paceRatio
+                paceRatio: paceRatio,
+                bars: bars,
+                showsPaceAsPrimary: showsPaceAsPrimary
             )
         )
     }
@@ -76,7 +84,9 @@ final class IconCache {
         weeklyPercentage: Double,
         isColored: Bool,
         paceKind: PaceKind?,
-        paceRatio: Double?
+        paceRatio: Double?,
+        bars: [IconBar],
+        showsPaceAsPrimary: Bool
     ) -> NSString {
         let percent = String(format: "%.2f", percentage)
         let weekly = String(format: "%.2f", weeklyPercentage)
@@ -87,6 +97,10 @@ final class IconCache {
         // the color band must be part of the key or they'd collide on a stale image.
         let ratio = paceRatio.map { String(format: "%.1f", $0) } ?? "none"
         let band = paceRatio.map { PacePalette.band(for: $0).rawValue } ?? "none"
-        return "\(percent)|\(weekly)|\(status.rawValue)|\(isLoading)|\(isStale)|\(iconStyle.rawValue)|\(isColored)|\(pace)|\(ratio)|\(band)" as NSString
+        // Multi-bar renders a bar per scoped model, so the same session and weekly
+        // pair can produce different icons. Name and value both matter: the colour
+        // is keyed off the name, the fill off the value.
+        let scoped = bars.map { "\($0.name):\(String(format: "%.2f", $0.percentage))" }.joined(separator: ",")
+        return "\(percent)|\(weekly)|\(status.rawValue)|\(isLoading)|\(isStale)|\(iconStyle.rawValue)|\(isColored)|\(pace)|\(ratio)|\(band)|\(scoped)|\(showsPaceAsPrimary)" as NSString
     }
 }

@@ -49,11 +49,18 @@ struct DisplayModePicker: View {
 
     private func renderPreviews() {
         let renderer = MenuBarIconRenderer()
-        consumptionPreview = renderPreview(renderer, paceRatio: nil, paceKind: nil)
-        pacePreview = renderPreview(renderer, paceRatio: 1.8, paceKind: .hot)
+        // Both modes show the off-pace badge; what differs is the primary number,
+        // so the previews must differ only there too.
+        consumptionPreview = renderPreview(renderer, paceRatio: 1.8, paceKind: .hot, showsPaceAsPrimary: false)
+        pacePreview = renderPreview(renderer, paceRatio: 1.8, paceKind: .hot, showsPaceAsPrimary: true)
     }
 
-    private func renderPreview(_ renderer: MenuBarIconRenderer, paceRatio: Double?, paceKind: PaceKind?) -> NSImage {
+    private func renderPreview(
+        _ renderer: MenuBarIconRenderer,
+        paceRatio: Double?,
+        paceKind: PaceKind?,
+        showsPaceAsPrimary: Bool
+    ) -> NSImage {
         renderer.render(
             percentage: 65,
             status: .warning,
@@ -63,7 +70,13 @@ struct DisplayModePicker: View {
             weeklyPercentage: 45,
             isColored: isColored,
             paceKind: paceKind,
-            paceRatio: paceRatio
+            paceRatio: paceRatio,
+            bars: [
+                IconBar(name: "Session", percentage: 65, role: .session),
+                IconBar(name: "Weekly", percentage: 45, role: .weekly),
+                IconBar(name: "Fable", percentage: 23, role: .scoped),
+            ],
+            showsPaceAsPrimary: showsPaceAsPrimary
         )
     }
 }

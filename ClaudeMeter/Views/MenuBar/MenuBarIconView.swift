@@ -15,16 +15,28 @@ struct MenuBarIconView: View {
     let isStale: Bool
     let iconStyle: IconStyle
     var weeklyPercentage: Double = 0  // Optional, used by dualBar style
+    var bars: [IconBar] = []  // Optional, used by multiBar style
     var paceKind: PaceKind?  // Optional off-pace badge (flame/snowflake)
-    var paceRatio: Double?  // Pace-first display: replaces the quota text with this ratio
+    var paceRatio: Double?  // Burn ratio, colours the badge in either display mode
+    /// Pace-first display. Quota-first still shows the badge, so the ratio must not
+    /// take over the number unless this is set.
+    var showsPaceAsPrimary: Bool = false
 
     private var paceText: String? {
-        paceRatio.map { String(format: "%.1f×", $0) }
+        guard showsPaceAsPrimary else { return nil }
+        return paceRatio.map { String(format: "%.1f×", $0) }
     }
 
     /// Compact variant without the multiply sign, for the tiny circular gauge center
     private var compactPaceText: String? {
-        paceRatio.map { String(format: "%.1f", $0) }
+        guard showsPaceAsPrimary else { return nil }
+        return paceRatio.map { String(format: "%.1f", $0) }
+    }
+
+    /// Only tint the primary number when pace is the primary metric; in quota-first
+    /// mode the number still means quota and keeps its status colour.
+    private var primaryOverrideColor: Color? {
+        showsPaceAsPrimary ? paceColor : nil
     }
 
     private var paceColor: Color? {
@@ -60,17 +72,19 @@ struct MenuBarIconView: View {
     private var styleView: some View {
         switch iconStyle {
         case .battery:
-            BatteryIcon(percentage: percentage, status: status, isLoading: isLoading, isStale: isStale, overrideText: paceText, overrideColor: paceColor)
+            BatteryIcon(percentage: percentage, status: status, isLoading: isLoading, isStale: isStale, overrideText: paceText, overrideColor: primaryOverrideColor)
         case .circular:
-            CircularGaugeIcon(percentage: percentage, status: status, isLoading: isLoading, isStale: isStale, overrideText: compactPaceText, overrideColor: paceColor)
+            CircularGaugeIcon(percentage: percentage, status: status, isLoading: isLoading, isStale: isStale, overrideText: compactPaceText, overrideColor: primaryOverrideColor)
         case .minimal:
-            MinimalIcon(percentage: percentage, status: status, isLoading: isLoading, isStale: isStale, overrideText: paceText, overrideColor: paceColor)
+            MinimalIcon(percentage: percentage, status: status, isLoading: isLoading, isStale: isStale, overrideText: paceText, overrideColor: primaryOverrideColor)
         case .segments:
-            SegmentedBarIcon(percentage: percentage, status: status, isLoading: isLoading, isStale: isStale, overrideColor: paceColor)
+            SegmentedBarIcon(percentage: percentage, status: status, isLoading: isLoading, isStale: isStale, overrideColor: primaryOverrideColor)
         case .dualBar:
-            DualBarIcon(percentage: percentage, weeklyPercentage: weeklyPercentage, status: status, isLoading: isLoading, isStale: isStale, overrideText: paceText, overrideColor: paceColor)
+            DualBarIcon(percentage: percentage, weeklyPercentage: weeklyPercentage, status: status, isLoading: isLoading, isStale: isStale, overrideText: paceText, overrideColor: primaryOverrideColor)
         case .gauge:
-            GaugeIcon(percentage: percentage, status: status, isLoading: isLoading, isStale: isStale, overrideColor: paceColor)
+            GaugeIcon(percentage: percentage, status: status, isLoading: isLoading, isStale: isStale, overrideColor: primaryOverrideColor)
+        case .multiBar:
+            MultiBarIcon(bars: bars, status: status, isLoading: isLoading, isStale: isStale, overrideText: paceText, overrideColor: primaryOverrideColor)
         }
     }
 }

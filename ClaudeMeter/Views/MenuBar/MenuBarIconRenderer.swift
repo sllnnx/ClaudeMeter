@@ -20,7 +20,9 @@ struct MenuBarIconRenderer {
         weeklyPercentage: Double = 0,
         isColored: Bool = true,
         paceKind: PaceKind? = nil,
-        paceRatio: Double? = nil
+        paceRatio: Double? = nil,
+        bars: [IconBar] = [],
+        showsPaceAsPrimary: Bool = false
     ) -> NSImage {
         let iconView = MenuBarIconView(
             percentage: percentage,
@@ -29,8 +31,10 @@ struct MenuBarIconRenderer {
             isStale: isStale,
             iconStyle: iconStyle,
             weeklyPercentage: weeklyPercentage,
+            bars: bars,
             paceKind: paceKind,
-            paceRatio: paceRatio
+            paceRatio: paceRatio,
+            showsPaceAsPrimary: showsPaceAsPrimary
         )
 
         let renderer = ImageRenderer(content: iconView)

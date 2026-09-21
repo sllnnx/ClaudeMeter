@@ -17,7 +17,8 @@ enum MenuBarIconSnapshotRenderer {
         status: UsageStatus,
         isLoading: Bool,
         isStale: Bool,
-        iconStyle: IconStyle
+        iconStyle: IconStyle,
+        bars: [IconBar] = []
     ) -> NSImage {
         let view = MenuBarIconView(
             percentage: percentage,
@@ -25,7 +26,8 @@ enum MenuBarIconSnapshotRenderer {
             isLoading: isLoading,
             isStale: isStale,
             iconStyle: iconStyle,
-            weeklyPercentage: weeklyPercentage
+            weeklyPercentage: weeklyPercentage,
+            bars: bars
         )
         .fixedSize()
 
