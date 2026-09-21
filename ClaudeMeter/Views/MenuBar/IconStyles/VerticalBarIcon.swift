@@ -22,7 +22,13 @@ struct VerticalBarIcon: View {
     private static let labelHeight: CGFloat = 8
 
     private let barWidth: CGFloat = 5
-    private let barSpacing: CGFloat = 4
+    private let barSpacing: CGFloat = 3
+
+    /// Every column is the same width, sized for the widest label ("5H"), so the
+    /// gaps between bars stay equal and each bar centres over its own label.
+    /// Sizing columns to their own label instead makes a two-character label push
+    /// its bar off-centre and widen the gap beside it.
+    private static let columnWidth: CGFloat = 13
 
     var body: some View {
         HStack(spacing: 4) {
@@ -42,9 +48,12 @@ struct VerticalBarIcon: View {
 
                             Text(bar.shortLabel)
                                 .font(.system(size: 7, weight: .semibold, design: .rounded))
+                                .lineLimit(1)
+                                .fixedSize()
                                 .frame(height: Self.labelHeight)
                                 .foregroundColor(labelColor)
                         }
+                        .frame(width: Self.columnWidth)
                     }
                 }
             }
