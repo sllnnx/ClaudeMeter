@@ -29,6 +29,9 @@ struct AppSettings: Codable, Equatable, Sendable {
     /// model released after this build needs no code change to be tracked.
     var hiddenScopedModels: Set<String>
 
+    /// Whether to show the exact reset time alongside the relative description
+    var isResetTimeShown: Bool
+
     /// Menu bar icon display style
     var iconStyle: IconStyle
 
@@ -42,6 +45,7 @@ struct AppSettings: Codable, Equatable, Sendable {
         isFirstLaunch: true,
         cachedOrganizationId: nil,
         hiddenScopedModels: [],
+        isResetTimeShown: true,
         iconStyle: .battery,
         isColoredIcon: true
     )
@@ -53,6 +57,7 @@ struct AppSettings: Codable, Equatable, Sendable {
         case isFirstLaunch = "is_first_launch"
         case cachedOrganizationId = "cached_organization_id"
         case hiddenScopedModels = "hidden_scoped_models"
+        case isResetTimeShown = "show_reset_time"
         case iconStyle = "icon_style"
         case isColoredIcon = "is_colored_icon"
     }
@@ -69,6 +74,7 @@ extension AppSettings {
         notificationThresholds = try container.decodeIfPresent(NotificationThresholds.self, forKey: .notificationThresholds) ?? defaults.notificationThresholds
         isFirstLaunch = try container.decodeIfPresent(Bool.self, forKey: .isFirstLaunch) ?? defaults.isFirstLaunch
         cachedOrganizationId = try container.decodeIfPresent(UUID.self, forKey: .cachedOrganizationId)
+        isResetTimeShown = try container.decodeIfPresent(Bool.self, forKey: .isResetTimeShown) ?? defaults.isResetTimeShown
         iconStyle = try container.decodeIfPresent(IconStyle.self, forKey: .iconStyle) ?? defaults.iconStyle
         isColoredIcon = try container.decodeIfPresent(Bool.self, forKey: .isColoredIcon) ?? defaults.isColoredIcon
 

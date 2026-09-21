@@ -62,6 +62,7 @@ struct SettingsView: View {
                 sessionKeySection
                 refreshIntervalSection
                 modelUsageSection
+                resetTimeSection
                 iconStyleSection
                 launchAtLoginSection
             }
@@ -260,6 +261,28 @@ struct SettingsView: View {
             get: { appModel.settings.isScopedModelShown(name) },
             set: { appModel.settings.setScopedModel(name, isShown: $0) }
         )
+    }
+
+    // MARK: - Reset Time Section
+
+    private var resetTimeSection: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Show Reset Time")
+                    .font(.subheadline)
+                Text("Display the exact time each limit resets in the menu bar popover")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Toggle("", isOn: $appModel.settings.isResetTimeShown)
+                .labelsHidden()
+        }
+        .padding()
+        .background(.quaternary.opacity(0.3))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
     // MARK: - Icon Style Section
