@@ -83,6 +83,16 @@ final class MenuBarIconSnapshotTests: XCTestCase {
         assertSnapshot(of: image, as: strategy, record: isRecording)
     }
 
+    func test_menuBarIcon_showsVerticalBarStyleWithScopedModel() {
+        let image = renderIcon(style: .verticalBar, bars: [
+            IconBar(name: "Session", percentage: TestConstants.menuBarSnapshotPercentage, role: .session),
+            IconBar(name: "Weekly", percentage: TestConstants.menuBarSnapshotWeeklyPercentage, role: .weekly),
+            IconBar(name: "Fable", percentage: 23, role: .scoped),
+        ])
+
+        assertSnapshot(of: image, as: strategy, record: isRecording)
+    }
+
     func test_menuBarIcon_showsLoadingIndicatorInBatteryStyle() {
         let image = renderIcon(style: .battery, status: .safe, isLoading: true)
 

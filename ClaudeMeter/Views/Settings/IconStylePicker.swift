@@ -48,6 +48,16 @@ struct IconStyleCard: View {
     private let previewWeeklyPercentage: Double = 45
     private let previewStatus: UsageStatus = .warning
 
+    /// The bar styles render from `bars`, so a preview without them draws an empty
+    /// icon - which is what made Multi Bar look like nothing in Settings.
+    private var previewBars: [IconBar] {
+        [
+            IconBar(name: "Session", percentage: previewPercentage, role: .session),
+            IconBar(name: "Weekly", percentage: previewWeeklyPercentage, role: .weekly),
+            IconBar(name: "Fable", percentage: 23, role: .scoped),
+        ]
+    }
+
     var body: some View {
         VStack(spacing: 8) {
             // Live preview container
@@ -94,7 +104,8 @@ struct IconStyleCard: View {
             isStale: false,
             iconStyle: style,
             weeklyPercentage: previewWeeklyPercentage,
-            isColored: isColored
+            isColored: isColored,
+            bars: previewBars
         ))
             .renderingMode(isColored ? .original : .template)
             .foregroundStyle(.primary)

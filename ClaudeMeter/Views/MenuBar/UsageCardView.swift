@@ -62,133 +62,40 @@ struct UsageCardView: View {
             : "Resets \(usageLimit.resetDescription)"
     }
 
+    /// Collapsed by default so several limits fit in one popover without scrolling.
+    /// Expanding reveals the numbers behind the headline: what was expected by now,
+    /// the burn ratio, and where the current rate lands.
+    @State private var isExpanded = false
+
+    private var disclosureAnimation: Animation? {
+        reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.9)
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Header with icon and title
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.title3)
-                    .foregroundColor(usageLimit.status.color)
-
-                Text(title)
-                    .font(.headline)
-                    .foregroundColor(.primary)
-
-                Spacer()
-
-                // Status badge: pace verdict in pace-first mode, quota status otherwise
-                if isPaceFirst, let paceRatio {
-                    let verdict = Self.paceVerdict(for: paceRatio)
-                    HStack(spacing: 4) {
-                        Image(systemName: verdict.icon)
-                            .font(.caption)
-                        Text(verdict.label)
-                            .font(.caption)
-                            .fontWeight(.medium)
-                    }
-                    .foregroundColor(verdict.color)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(verdict.color.opacity(0.15))
-                    .cornerRadius(8)
-                } else {
-                    HStack(spacing: 4) {
-                        Image(systemName: usageLimit.status.iconName)
-                            .font(.caption)
-                        Text(usageLimit.status.rawValue.capitalized)
-                            .font(.caption)
-                            .fontWeight(.medium)
-                    }
-                    .foregroundColor(usageLimit.status.color)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(usageLimit.status.color.opacity(0.15))
-                    .cornerRadius(8)
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                withAnimation(disclosureAnimation) { isExpanded.toggle() }
+            } label: {
+                VStack(alignment: .leading, spacing: 8) {
+                    headerRow
+                    progressBar
+                    resetRow
                 }
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(title): \(Int(usageLimit.percentage))% used, \(usageLimit.status.accessibilityDescription)")
+            .accessibilityValue(resetLabel)
+            .accessibilityHint(isExpanded ? "Hide details" : "Show details")
+            .accessibilityAddTraits(.isButton)
 
-            // Primary number: pace ratio in pace-first mode, quota percentage otherwise
-            HStack(alignment: .lastTextBaseline) {
-                if isPaceFirst, let paceRatio {
-                    Text(String(format: "%.1f×", paceRatio))
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .tracking(-0.7)
-                        .contentTransition(.numericText())
-                        .foregroundColor(Self.paceVerdict(for: paceRatio).color)
-
-                    Spacer()
-
-                    // Quota usage as secondary detail
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("\(Int(usageLimit.percentage))% used")
-                            .font(.caption)
-                            .foregroundColor(usageLimit.status.color)
-                        if let expectedPercent {
-                            Text("\(Int(expectedPercent.rounded()))% expected")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                } else {
-                    Text("\(Int(usageLimit.percentage))%")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .tracking(-0.7)
-                        .contentTransition(.numericText())
-                        .foregroundColor(usageLimit.status.color)
-
-                    Spacer()
-
-                    VStack(alignment: .trailing, spacing: 2) {
-                        if let expectedPercent {
-                            Text("\(Int(expectedPercent.rounded()))% expected")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        paceLine
-                    }
-                }
+            if isExpanded {
+                detailSection
+                    .transition(.opacity.combined(with: .move(edge: .top)))
             }
-
-            // Progress bar with expected-pace tick
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    // Background
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.gray.opacity(0.2))
-
-                    // Progress (pace-colored in pace-first mode, quota-status otherwise)
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(barColor)
-                        .frame(width: geometry.size.width * min(usageLimit.percentage / 100, 1.0))
-                        .animation(fillAnimation, value: usageLimit.percentage)
-                        .animation(fillAnimation, value: barColor)
-
-                    // Expected-by-now tick
-                    if let expectedPercent {
-                        RoundedRectangle(cornerRadius: 1)
-                            .fill(Color.primary.opacity(0.55))
-                            .frame(width: 2, height: 14)
-                            .offset(x: geometry.size.width * min(expectedPercent / 100, 1.0) - 1)
-                            .animation(fillAnimation, value: expectedPercent)
-                    }
-                }
-            }
-            .frame(height: 8)
-
-            // Projection at the current rate
-            projectionLine
-
-            // Reset time
-            HStack(spacing: 4) {
-                Image(systemName: "clock")
-                    .font(.caption)
-                Text(resetLabel)
-                    .font(.caption)
-            }
-            .help(usageLimit.resetTimeFormatted)
-            .foregroundColor(.secondary)
         }
-        .padding(16)
+        .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color(nsColor: .controlBackgroundColor))
@@ -198,9 +105,171 @@ struct UsageCardView: View {
                 .stroke(Color.primary.opacity(reduceTransparency ? 0.25 : 0.08), lineWidth: 1)
         )
         .animation(fillAnimation, value: usageLimit.percentage)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title): \(Int(usageLimit.percentage))% used, \(usageLimit.status.accessibilityDescription)")
-        .accessibilityValue(resetLabel)
+    }
+
+    // MARK: - Compact row
+
+    /// Title and headline number share one row: the number carried its own row at
+    /// 36pt before, which cost more height than a third card needed to fit.
+    private var headerRow: some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.callout)
+                .foregroundColor(usageLimit.status.color)
+
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundColor(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+
+            Spacer(minLength: 4)
+
+            headlineValue
+
+            Image(systemName: "chevron.right")
+                .font(.caption2)
+                .fontWeight(.semibold)
+                .foregroundStyle(.tertiary)
+                .rotationEffect(.degrees(isExpanded ? 90 : 0))
+        }
+    }
+
+    /// Pace ratio in pace-first mode, quota percentage otherwise.
+    @ViewBuilder
+    private var headlineValue: some View {
+        if isPaceFirst, let paceRatio {
+            Text(String(format: "%.1f×", paceRatio))
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .tracking(-0.4)
+                .contentTransition(.numericText())
+                .foregroundColor(Self.paceVerdict(for: paceRatio).color)
+        } else {
+            Text("\(Int(usageLimit.percentage))%")
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .tracking(-0.4)
+                .contentTransition(.numericText())
+                .foregroundColor(usageLimit.status.color)
+        }
+    }
+
+    private var progressBar: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Color.gray.opacity(0.2))
+
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(barColor)
+                    .frame(width: geometry.size.width * min(usageLimit.percentage / 100, 1.0))
+                    .animation(fillAnimation, value: usageLimit.percentage)
+                    .animation(fillAnimation, value: barColor)
+
+                // Expected-by-now tick
+                if let expectedPercent {
+                    RoundedRectangle(cornerRadius: 1)
+                        .fill(Color.primary.opacity(0.55))
+                        .frame(width: 2, height: 12)
+                        .offset(x: geometry.size.width * min(expectedPercent / 100, 1.0) - 1)
+                        .animation(fillAnimation, value: expectedPercent)
+                }
+            }
+        }
+        .frame(height: 6)
+    }
+
+    private var resetRow: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "clock")
+                .font(.caption2)
+            Text(resetLabel)
+                .font(.caption2)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+
+            Spacer(minLength: 0)
+
+            // The off-pace signal earns its place in the compact row: it is the one
+            // detail that changes what you would do next.
+            if let paceRatio, isOffPace(paceRatio) {
+                compactPaceBadge(paceRatio)
+            }
+        }
+        .help(usageLimit.resetTimeFormatted)
+        .foregroundColor(.secondary)
+    }
+
+    private func isOffPace(_ ratio: Double) -> Bool {
+        ratio > Constants.Pacing.riskThreshold
+            || (showsUnderuse && ratio < Constants.Pacing.underuseThreshold)
+    }
+
+    private func compactPaceBadge(_ ratio: Double) -> some View {
+        HStack(spacing: 2) {
+            Image(systemName: ratio > Constants.Pacing.riskThreshold ? "flame.fill" : "snowflake")
+            Text(String(format: "%.1f×", ratio))
+        }
+        .font(.caption2)
+        .foregroundColor(PacePalette.color(for: ratio))
+        .accessibilityLabel(String(format: "%.1f times sustainable pace", ratio))
+    }
+
+    // MARK: - Expanded detail
+
+    private var detailSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Divider()
+
+            HStack {
+                statusBadge
+                Spacer()
+                if let expectedPercent {
+                    Text("\(Int(expectedPercent.rounded()))% expected by now")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            if isPaceFirst {
+                Text("\(Int(usageLimit.percentage))% of quota used")
+                    .font(.caption)
+                    .foregroundColor(usageLimit.status.color)
+            }
+
+            paceLine
+            projectionLine
+        }
+    }
+
+    /// Pace verdict in pace-first mode, quota status otherwise.
+    @ViewBuilder
+    private var statusBadge: some View {
+        if isPaceFirst, let paceRatio {
+            let verdict = Self.paceVerdict(for: paceRatio)
+            badge(icon: verdict.icon, label: verdict.label, color: verdict.color)
+        } else {
+            badge(
+                icon: usageLimit.status.iconName,
+                label: usageLimit.status.rawValue.capitalized,
+                color: usageLimit.status.color
+            )
+        }
+    }
+
+    private func badge(icon: String, label: String, color: Color) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.caption)
+            Text(label)
+                .font(.caption)
+                .fontWeight(.medium)
+        }
+        .foregroundColor(color)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(color.opacity(0.15))
+        .cornerRadius(8)
     }
 
     // MARK: - Pace

@@ -14,8 +14,9 @@ Keep track of your Claude.ai plan usage at a glance.
 - **Real-time usage monitoring** - Track your 5-hour session, 7-day weekly, and model-specific usage limits
 - **Any model, no update needed** - Model-specific limits (Fable, Opus, Sonnet, ...) are read from whatever the API reports, so a newly launched model gets a usage card without an app update; switch off any you don't want in Settings
 - **Menu bar integration** - Clean, colour-coded usage indicator that lives in your macOS menu bar
-- **Multiple icon styles** - Choose from 7 icon styles: Battery, Circular, Minimal, Segments, Dual Bar, Gauge, or Multi Bar
-- **Multi Bar icon** - One bar per limit in the menu bar: session, weekly, and each model-specific cap, so a Fable or Opus limit is visible without opening the popover
+- **Multiple icon styles** - Choose from 8 icon styles: Battery, Circular, Minimal, Segments, Dual Bar, Gauge, Multi Bar, or Vertical Bar
+- **Per-limit menu bar icons** - Multi Bar stacks one horizontal bar per limit; Vertical Bar shows upright bars labelled `5H`, `W` and the model's initial. Either way a Fable or Opus cap is visible without opening the popover
+- **Compact popover** - Every limit fits in one window at a glance; tap a card to expand it for the expected-by-now figure, burn ratio, and projection
 - **Pacing indicator** - Flame warns when you're burning faster than sustainable pace, snowflake when weekly quota is heading for waste. Shown in both display modes
 - **Two display modes** - Consumption answers "how much have I used?", Pace answers "am I on track?"
 - **Exact reset times** - Each card can show the precise reset timestamp alongside the relative one
@@ -252,10 +253,18 @@ expected-by-now tick, projections and exact reset times.
   switched on. Inverted to opt-out: anything the API reports gets a usage card on
   arrival, including models released after this build, and Settings hides rather
   than reveals.
-- **Multi Bar menu bar icon.** Scoped limits previously never reached the menu bar
-  at all. The new style stacks session, weekly and a bar per scoped model, shrinking
-  to fit the 22pt menu bar and capping at 5 bars, with the busiest models keeping
-  their slots. The six existing styles are unchanged.
+- **Multi Bar and Vertical Bar menu bar icons.** Scoped limits previously never
+  reached the menu bar at all. Multi Bar stacks session, weekly and a bar per scoped
+  model, shrinking to fit the 22pt menu bar and capping at 5 bars with the busiest
+  models keeping their slots. Vertical Bar spends height instead of width, labelling
+  each bar `5H`, `W` or the model's initial. The six original styles are unchanged.
+- **Compact popover with progressive disclosure.** Cards led with a 36pt number and
+  showed every figure at once, so a third limit fell below the fold. The headline
+  number now shares a row with the title, and the expected-by-now figure, pace ratio
+  and projection move behind a tap. The off-pace flame or snowflake stays visible
+  when it applies, being the one detail that changes what you would do next.
+- **Fixed the Settings icon picker**, which rendered the bar styles as empty boxes:
+  it built each preview without the bar data those styles draw from.
 - **Off-pace badge in Consumption mode.** The flame/snowflake badge was computed only
   in Pace mode. It now shows in both; only the primary number differs between them.
 - **Design pass on the popover**, following

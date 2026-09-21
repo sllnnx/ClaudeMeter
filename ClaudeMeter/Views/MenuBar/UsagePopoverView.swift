@@ -56,7 +56,8 @@ struct UsagePopoverView: View {
                 .help("Refresh usage data")
                 .keyboardShortcut("r", modifiers: .command)
             }
-            .padding()
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
 
             Divider()
 
@@ -100,7 +101,7 @@ struct UsagePopoverView: View {
             // Content
             if let usageData = appModel.usageData {
                 ScrollView {
-                    VStack(spacing: 16) {
+                    VStack(spacing: 10) {
                         // Session usage card
                         UsageCardView(
                             title: "5-Hour Session",
@@ -137,7 +138,8 @@ struct UsagePopoverView: View {
                             )
                         }
                     }
-                    .padding()
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 12)
                 }
             } else {
                 // Loading state
@@ -171,9 +173,10 @@ struct UsagePopoverView: View {
                 .keyboardShortcut("q", modifiers: .command)
                 .accessibilityLabel("Quit application")
             }
-            .padding()
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
         }
-        .frame(width: 320, height: 510)
+        .frame(width: 320, height: 420)
         .background {
             if reduceTransparency {
                 Color(nsColor: .windowBackgroundColor)

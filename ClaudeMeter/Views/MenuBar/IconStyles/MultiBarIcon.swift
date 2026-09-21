@@ -16,6 +16,16 @@ struct IconBar: Equatable, Sendable {
         case weekly
         case scoped
     }
+
+    /// One- or two-character label for the vertical style, where there is room
+    /// under each bar but not beside it.
+    var shortLabel: String {
+        switch role {
+        case .session: return "5H"
+        case .weekly: return "W"
+        case .scoped: return String(name.prefix(1)).uppercased()
+        }
+    }
 }
 
 extension IconBar {

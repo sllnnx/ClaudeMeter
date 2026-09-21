@@ -85,6 +85,8 @@ struct MenuBarIconView: View {
             GaugeIcon(percentage: percentage, status: status, isLoading: isLoading, isStale: isStale, overrideColor: primaryOverrideColor)
         case .multiBar:
             MultiBarIcon(bars: bars, status: status, isLoading: isLoading, isStale: isStale, overrideText: paceText, overrideColor: primaryOverrideColor)
+        case .verticalBar:
+            VerticalBarIcon(bars: bars, status: status, isLoading: isLoading, isStale: isStale, overrideColor: primaryOverrideColor)
         }
     }
 }
