@@ -10,25 +10,20 @@ final class ScopedUsageSettingsTests: XCTestCase {
 
     // MARK: - Settings migration
 
-    func test_decode_withLegacyShowSonnetTrue_showsSonnet() throws {
-        let settings = try decodeSettings(#"{"show_sonnet_usage": true}"#)
+    /// `show_sonnet_usage` shipped defaulting to false, so a saved false is almost always
+    /// the default rather than a choice. It is not migrated; showing is now the default.
+    func test_decode_withLegacyShowSonnetFalse_stillShowsSonnet() throws {
+        let settings = try decodeSettings(#"{"show_sonnet_usage": false}"#)
 
-        XCTAssertEqual(settings.shownScopedModels, ["Sonnet"])
+        XCTAssertTrue(settings.hiddenScopedModels.isEmpty)
         XCTAssertTrue(settings.isScopedModelShown("Sonnet"))
     }
 
-    func test_decode_withLegacyShowSonnetTrue_doesNotOptIntoOtherModels() throws {
+    func test_decode_withLegacyShowSonnetTrue_showsEveryModel() throws {
         let settings = try decodeSettings(#"{"show_sonnet_usage": true}"#)
 
-        XCTAssertFalse(settings.isScopedModelShown("Fable"))
-    }
-
-    func test_decode_withLegacyShowSonnetFalse_showsNothing() throws {
-        let settings = try decodeSettings(#"{"show_sonnet_usage": false}"#)
-
-        XCTAssertTrue(settings.shownScopedModels.isEmpty)
-        XCTAssertFalse(settings.isScopedModelShown("Sonnet"))
-        XCTAssertFalse(settings.isScopedModelShown("Fable"))
+        XCTAssertTrue(settings.isScopedModelShown("Sonnet"))
+        XCTAssertTrue(settings.isScopedModelShown("Fable"))
     }
 
     /// The settings shape written by the 1.4.0 release.
@@ -45,34 +40,42 @@ final class ScopedUsageSettingsTests: XCTestCase {
         XCTAssertFalse(settings.isColoredIcon)
         XCTAssertEqual(settings.refreshInterval, 60)
 
-        // The Sonnet opt-out is preserved, and nothing is opted in on the user's behalf
-        XCTAssertFalse(settings.isScopedModelShown("Sonnet"))
-        XCTAssertFalse(settings.isScopedModelShown("Fable"))
-    }
-
-    func test_decode_withShownScopedModels_roundTrips() throws {
-        let settings = try decodeSettings(#"{"shown_scoped_models": ["Fable"]}"#)
-
+        // Every model-scoped limit the API reports is now tracked by default
+        XCTAssertTrue(settings.isScopedModelShown("Sonnet"))
         XCTAssertTrue(settings.isScopedModelShown("Fable"))
-        XCTAssertFalse(settings.isScopedModelShown("Opus"))
     }
 
-    func test_decode_withNeitherKey_showsNothing() throws {
+    func test_decode_withHiddenScopedModels_roundTrips() throws {
+        let settings = try decodeSettings(#"{"hidden_scoped_models": ["Opus"]}"#)
+
+        XCTAssertFalse(settings.isScopedModelShown("Opus"))
+        XCTAssertTrue(settings.isScopedModelShown("Fable"))
+    }
+
+    func test_decode_withNeitherKey_showsEveryModel() throws {
         let settings = try decodeSettings("{}")
 
-        XCTAssertTrue(settings.shownScopedModels.isEmpty)
-        XCTAssertFalse(settings.isScopedModelShown("Fable"))
+        XCTAssertTrue(settings.hiddenScopedModels.isEmpty)
+        XCTAssertTrue(settings.isScopedModelShown("Fable"))
+    }
+
+    /// A model the API reports for the first time needs no code change and no toggle.
+    func test_unknownModel_isShownWithoutBeingListed() {
+        let settings = AppSettings.default
+
+        XCTAssertTrue(settings.isScopedModelShown("Some Model Released Later"))
     }
 
     func test_setScopedModel_togglesVisibility() {
         var settings = AppSettings.default
 
-        settings.setScopedModel("Fable", isShown: true)
-        XCTAssertTrue(settings.isScopedModelShown("Fable"))
-
         settings.setScopedModel("Fable", isShown: false)
         XCTAssertFalse(settings.isScopedModelShown("Fable"))
-        XCTAssertTrue(settings.shownScopedModels.isEmpty)
+        XCTAssertEqual(settings.hiddenScopedModels, ["Fable"])
+
+        settings.setScopedModel("Fable", isShown: true)
+        XCTAssertTrue(settings.isScopedModelShown("Fable"))
+        XCTAssertTrue(settings.hiddenScopedModels.isEmpty)
     }
 
     // MARK: - Public JSON export

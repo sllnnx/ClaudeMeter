@@ -212,10 +212,10 @@ struct SettingsView: View {
 
     // MARK: - Model Usage Section
 
-    /// Includes opted-in names so a model that drops out of the response can still be switched off.
+    /// Includes hidden names so a model that drops out of the response can still be switched back on.
     private var scopedModelNames: [String] {
         let reported = appModel.usageData?.scopedUsage.map(\.name) ?? []
-        return Array(Set(reported).union(appModel.settings.shownScopedModels)).sorted()
+        return Array(Set(reported).union(appModel.settings.hiddenScopedModels)).sorted()
     }
 
     private var modelUsageSection: some View {
@@ -225,7 +225,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Model Usage")
                     .font(.subheadline)
-                Text("Choose which model-specific weekly limits appear in the menu bar popover")
+                Text("Model-specific weekly limits appear in the menu bar popover by default. Switch one off to hide it.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
